@@ -1,0 +1,14 @@
+/vendor/
+
+# Configuration
+/.env
+
+# Build
+/build/
+/dist/
+
+# Uploads
+/uploads/
+
+# Log files
+/logs/

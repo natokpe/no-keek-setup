@@ -1,0 +1,25 @@
+{
+    "name": "natokpe/no-keek-setup",
+    "description": "Setup for NO Keek WordPress theme.",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "NatOkpe\\Wp\\Plugin\\KeekSetup\\": "src/"
+        },
+
+        "files": [
+            "vendor/cmb2/cmb2/init.php"
+        ]
+    },
+    "authors": [
+        {
+            "name": "Nat Okpe",
+            "email": "me@nat.com.ng"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "cmb2/cmb2": "^2.10"
+    }
+}
