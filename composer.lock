@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cde386e20ce855b652209d87d108cd33",
+    "content-hash": "51cab9d4082de562c324dae0b4525cdc",
     "packages": [
         {
             "name": "cmb2/cmb2",
