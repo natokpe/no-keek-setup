@@ -7,11 +7,15 @@ namespace NatOkpe\Wp\Plugin\KeekSetup;
 
 use NatOkpe\Wp\Plugin\KeekSetup\Utils\Clock;
 
+use \DateTime;
+
 use \WP_Post;
 use \WP_Role;
 use \WP_User_Query;
 use \WP_Query;
 use \WP_User;
+
+// use PHPMailer\PHPMailer\PHPMailer;
 
 use function \add_action;
 use function \add_theme_support;
@@ -25,6 +29,7 @@ use function \new_cmb2_box;
 
 class Engine
 {
+    public
     function __construct()
     {
     }
@@ -358,7 +363,7 @@ class Engine
      * 
      */
     public static
-    function get_option(string $key = '', $default = false, string $store = 'no_site_config')
+    function get_option(string $key = '', $default = false, string $store = 'no_so')
     {
         if (function_exists( 'cmb2_get_option' ) ) {
             // Use cmb2_get_option as it passes through some key filters.
@@ -786,10 +791,110 @@ class Engine
             ]);
         });
 
-        // var_dump(wp_get_schedules());exit;
+        /**
+         * Register a custom menu page.
+         */
 
-        // add_action('application_received_notif', function () {});
+        add_action( 'admin_menu', function () {
+            add_menu_page(
+                __( 'Control Panel', 'natokpe' ),
+                'Control Panel',
+                'manage_options',
+                'control-panel',
+                function () {
+                    ?><div class="wrap">
+                        <h2 style="margin-bottom: 1em;">Control Panel</h2>
+                        <h3>Email</h3>
+                        <ul class="wrap">
+                            <li>
+                                <a href="<?php echo admin_url('/admin.php?page=email-settings'); ?>">Email Settings</a>
+                            </li>
+                            <li>
+                                <a href="<?php echo admin_url('/edit.php?post_type=mail_server'); ?>">Mail Servers</a>
+                            </li>
+                            <li>
+                                <a href="<?php echo admin_url('/edit.php?post_type=email_account'); ?>">Email Accounts</a>
+                            </li>
+                            <li>
+                                <a href="<?php echo admin_url('/edit.php?post_type=email_template'); ?>">Email Templates</a>
+                            </li>
+                        </ul>
 
+                        <h3>Assets</h3>
+                        <ul class="wrap">
+                            <li>
+                                <a href="<?php echo admin_url('/admin.php?page=manage-assets'); ?>">Manage Assets</a>
+                            </li>
+                        </ul>
+                    </div><?php
+                },
+                'dashicons-editor-kitchensink',
+                200
+            );
+        });
+        
+        add_action('wp_mail_succeeded', function ($mail_data) {
+            // var_dump('email sent', $mail_data);
+        }, 10, 1);
+
+        add_action('wp_mail_failed', function ($mail_data) {
+            // var_dump('email failed', $mail_data);
+        }, 10, 1);
+
+        add_action('email_verification', function ($recipient, WP_User $user) {
+            $allow = self::get_option('email_ver_allow', false, 'email-sending-options');
+
+            if (! (is_string($allow) ? (strtolower($allow) === 'on') : $allow === true)) {
+                do_action('wp_mail_failed', new WP_Error( 'wp_mail_failed', 'Email sending disabled for Email Verification type', $att));
+                return;
+            }
+
+            // generate verification code
+            // generate verification url
+
+            $mdata = [
+                'verification_code' => '123456',
+                'verification_url'  => home_url(),
+                'user'              => [
+                    'email' => $recipient,
+                    'role'  => '',
+                ],
+
+                'site' => [
+                    'name' => '',
+                ],
+            ];
+
+            $mode = self::get_option('email_ver_mode', null, 'email-sending-options');
+
+            if ($mode === 'instant') {
+                $ac  = self::get_option('email_ver_ac', null, 'email-sending-options');
+                $tpl = self::get_option('email_ver_tpl', null, 'email-sending-options');
+
+                if (ctype_digit((string) $ac) && ctype_digit((string) $tpl)) {
+                    $email = new Email((int) $ac, (int) $tpl);
+                    $email->prepare($mdata);
+                    $email->send($recipient);
+                }
+            } else {
+            }
+
+        }, 10, 2);
+
+        add_filter( "pre_wp_mail", function ($return, $att) {
+            $opt = self::get_option('allow_email', false, 'email-settings');
+            $allow = false;
+
+            if (is_string($opt) ? (strtolower($opt) === 'on') : $opt === true) {
+                // Email sending is enabled
+                $allow = null;
+            } else {
+                do_action('wp_mail_failed', new WP_Error( 'wp_mail_failed', 'Email sending disabled for all types', $att));
+                $allow = false;
+            }
+
+            return $allow;
+        }, 1, 2);
     }
 }
 /*
