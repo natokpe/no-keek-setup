@@ -112,10 +112,10 @@ class Email
                 $this->_email_account = $ac;
                 $this->_mail_server   = $svr;
 
-                $this->_connection_type = get_post_meta($this->_mail_server->ID, 'conn_type', null)[0] ?? null;
+                $this->_connection_type = get_post_meta($this->_mail_server->ID, 'connection_type', null)[0] ?? null;
                 $this->_connection_type = array_key_exists($this->_connection_type, DataList::get('email_connection')) ? $this->_connection_type : null;
 
-                $this->_host = get_post_meta($this->_mail_server->ID, 'hostname', null)[0] ?? null;
+                $this->_host = get_post_meta($this->_mail_server->ID, 'host', null)[0] ?? null;
 
                 $this->_port = get_post_meta($this->_mail_server->ID, 'port', null)[0] ?? null;
                 $this->_port = ctype_digit((string) $this->_port) ? (int) $this->_port : null;
