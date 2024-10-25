@@ -105,52 +105,186 @@ class Email
         $ac = get_post($email_account);
 
         if ($ac instanceOf WP_Post) {
-            $svr = get_post_meta($ac->ID, 'server', null)[0] ?? null;
+            $svr = get_post_meta($ac->ID, 'server', true);
             $svr = ctype_digit((string) $svr) ? get_post((int) $svr) : null;
 
             if ($svr instanceOf WP_Post) {
                 $this->_email_account = $ac;
                 $this->_mail_server   = $svr;
 
-                $this->_connection_type = get_post_meta($this->_mail_server->ID, 'connection_type', null)[0] ?? null;
-                $this->_connection_type = array_key_exists($this->_connection_type, DataList::get('email_connection')) ? $this->_connection_type : null;
+                $this->_connection_type = filter_var(
+                    get_post_meta(
+                        $this->_mail_server->ID, 'connection_type', true
+                    ),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            $ls = DataList::get('email_connection');
+                            $rt = array_key_exists($vl, $ls) ? $vl : null;
+                            return $rt;
+                        },
+                    ],
+                );
 
-                $this->_host = get_post_meta($this->_mail_server->ID, 'host', null)[0] ?? null;
+                $this->_host = filter_var(
+                    get_post_meta($this->_mail_server->ID, 'host', true),
+                    FILTER_VALIDATE_DOMAIN,
+                    [
+                        'options' => [
+                            'default' => null,
+                        ],
+                        'flags' => FILTER_FLAG_HOSTNAME,
+                    ]
+                );
 
-                $this->_port = get_post_meta($this->_mail_server->ID, 'port', null)[0] ?? null;
-                $this->_port = ctype_digit((string) $this->_port) ? (int) $this->_port : null;
+                // well-known: 0-1024
+                // registered: 1024-49151
+                // dynamic and private: 49152-65535
+                $this->_port = filter_var(
+                    get_post_meta($this->_mail_server->ID, 'port', true),
+                    FILTER_VALIDATE_INT,
+                    [
+                    'options' => [
+                        'default' => null,
+                        'min_range' => 0,
+                        'max_range' => 65535
+                    ],
+                    'flags' => FILTER_NULL_ON_FAILURE,
+                ]);
 
-                $this->_encryption_type = get_post_meta($this->_mail_server->ID, 'encryption_type', null)[0] ?? null;
-                $this->_encryption_type = array_key_exists($this->_encryption_type, DataList::get('smtp_encryption')) ? $this->_encryption_type : null;
+                $this->_encryption_type = filter_var(
+                    get_post_meta($this->_mail_server->ID, 'encryption_type', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            $ls = DataList::get('smtp_encryption');
+                            $rt = array_key_exists($vl, $ls) ? $vl : null;
+                            return $rt;
+                        },
+                    ],
+                );
 
-                $this->_require_auth = get_post_meta($this->_email_account->ID, 'require_auth', false)[0] ?? null;
-                $this->_require_auth = is_string($this->_require_auth) ? (strtolower($this->_require_auth) === 'on') : $this->_require_auth === true;
+                $this->_require_auth = filter_var(
+                    get_post_meta($this->_email_account->ID, 'require_auth', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            $rt = is_bool($vl) ? ($vl === true) : null;
 
-                $this->_username = get_post_meta($this->_email_account->ID, 'username', null)[0] ?? null;
-                $this->_password = get_post_meta($this->_email_account->ID, 'password', null)[0] ?? null;
+                            if (is_string($vl)) {
+                                $rt = strtolower($vl) === 'true';
+                                $rt = $rt || (strtolower($vl) === 'yes');
+                                $rt = $rt || (strtolower($vl) === 'on');
+                            }
 
-                $this->_sender['address'] = get_post_meta($this->_email_account->ID, 'sender_address', null)[0] ?? null;
-                $this->_sender['name']    = get_post_meta($this->_email_account->ID, 'sender_name', null)[0] ?? null;
+                            return $rt;
+                        },
+                    ],
+                );
+
+                $this->_username = filter_var(
+                    get_post_meta($this->_email_account->ID, 'username', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            return is_string($vl) ? $vl : null;
+                        },
+                    ],
+                );
+
+                $this->_password = filter_var(
+                    get_post_meta($this->_email_account->ID, 'password', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            return is_string($vl) ? $vl : null;
+                        },
+                    ],
+                );
+
+                $this->_sender['address'] = filter_var(
+                    get_post_meta($this->_email_account->ID, 'sender_address', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            return is_string($vl) ? $vl : null;
+                        },
+                    ],
+                );
+
+                $this->_sender['name'] = filter_var(
+                    get_post_meta($this->_email_account->ID, 'sender_name', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            return is_string($vl) ? $vl : null;
+                        },
+                    ],
+                );
             }
         }
 
         return $this;
     }
 
+    /**
+     * TODO: implement array based template
+     */
     public
-    function setTemplate(int $message_template): self
+    function setTemplate(int|array $message_template): self
     {
-        $tpl = get_post($message_template);
+        if (is_int($message_template)) {
+            $tpl = get_post($message_template);
 
-        if ($tpl instanceOf WP_Post) {
-            $this->_message_template = $tpl;
+            if ($tpl instanceOf WP_Post) {
+                $this->_template['subject'] = filter_var(
+                    get_post_meta($tpl->ID, 'template_subject', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            $rt = is_string($vl) ? $vl : '';
+                            return (! empty($rt)) ? $rt : null;
+                        },
+                    ],
+                );
 
-            $this->_template['subject']    = get_post_meta($tpl->ID, 'template_subject', '')[0] ?? null;
-            $this->_template['body_html']  = get_post_meta($tpl->ID, 'template_html', '')[0] ?? null;
-            $this->_template['body_plain'] = get_post_meta($tpl->ID, 'template_plain', '')[0] ?? null;
-            $this->_content_type           = get_post_meta($tpl->ID, 'content_type', false)[0] ?? null;
+                $this->_template['body_html'] = filter_var(
+                    get_post_meta($tpl->ID, 'template_html', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            $rt = is_string($vl) ? $vl : '';
+                            return (! empty($rt)) ? $rt : null;
+                        },
+                    ],
+                );
 
-            $this->_content_type = array_key_exists($this->_content_type, DataList::get('content_type')) ? $this->_content_type : null;
+                $this->_template['body_plain'] = filter_var(
+                    get_post_meta($tpl->ID, 'template_plain', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            $rt = is_string($vl) ? $vl : '';
+                            return (! empty($rt)) ? $rt : null;
+                        },
+                    ],
+                );
+
+                $this->_content_type = filter_var(
+                    get_post_meta($tpl->ID, 'content_type', true),
+                    FILTER_CALLBACK,
+                    [
+                        'options' => function ($vl) {
+                            $ls = DataList::get('content_type');
+                            $rt = array_key_exists($vl, $ls) ? $vl : null;
+                            return $rt;
+                        },
+                    ],
+                );
+            }
+        }
+
+        if (is_string($message_template)) {
         }
 
         return $this;
@@ -164,9 +298,20 @@ class Email
         $templateEngine  = new Mustache_Engine();
 
         $this->_message = [
-            'subject'    => $templateEngine->render($this->_template['subject'] ?? '', $this->_message_data),
-            'body_html'  => $templateEngine->render($this->_template['body_html'] ?? '', $this->_message_data),
-            'body_plain' => $templateEngine->render($this->_template['body_plain'] ?? '', $this->_message_data),
+            'subject' => $templateEngine->render(
+                $this->_template['subject'] ?? '',
+                $this->_message_data
+            ),
+
+            'body_html' => $templateEngine->render(
+                $this->_template['body_html'] ?? '',
+                $this->_message_data
+            ),
+
+            'body_plain' => $templateEngine->render(
+                $this->_template['body_plain'] ?? '',
+                $this->_message_data
+            ),
         ];
 
         if (is_array($sender)) {
@@ -180,26 +325,46 @@ class Email
     public
     function send(string|array $to): bool
     {
+        global $phpmailer;
+
         $this->_to = $to;
 
         $att = [
             'to' => $to,
         ];
 
-        if (! ($this->_mail_server instanceOf WP_Post)) {
-            do_action(
-                'wp_mail_failed',
-                new WP_Error(
-                    'wp_mail_failed',
-                    'Mail server not set',
-                    $att
-                )
+        if ($this->_email_account instanceOf WP_Post) {
+            $account_on = filter_var(
+                get_post_meta($this->_email_account->ID, 'enabled', true),
+                FILTER_CALLBACK,
+                [
+                    'options' => function ($vl) {
+                        $rt = is_bool($vl) ? ($vl === true) : false;
+
+                        if (is_string($vl)) {
+                            $rt = strtolower($vl) === 'true';
+                            $rt = $rt || (strtolower($vl) === 'yes');
+                            $rt = $rt || (strtolower($vl) === 'on');
+                        }
+
+                        return $rt;
+                    },
+                ],
             );
 
-            return false;
-        }
+            if (! $account_on) {
+                do_action(
+                    'wp_mail_failed',
+                    new WP_Error(
+                        'wp_mail_failed',
+                        'Email sending disabled on email account',
+                        $att
+                    )
+                );
 
-        if (! ($this->_email_account instanceOf WP_Post)) {
+                return false;
+            }
+        } else {
             do_action(
                 'wp_mail_failed',
                 new WP_Error(
@@ -212,30 +377,43 @@ class Email
             return false;
         }
 
-        // if ($this->_mail_server)
-        $server_on = get_post_meta($this->_mail_server->ID, 'enabled', null)[0] ?? null;
+        if ($this->_mail_server instanceOf WP_Post) {
+            $server_on = filter_var(
+                get_post_meta($this->_mail_server->ID, 'enabled', true),
+                FILTER_CALLBACK,
+                [
+                    'options' => function ($vl) {
+                        $rt = is_bool($vl) ? ($vl === true) : false;
 
-        if (! (is_string($server_on) ? (strtolower($server_on) === 'on') : $server_on === true)) {
-            do_action(
-                'wp_mail_failed',
-                new WP_Error(
-                    'wp_mail_failed',
-                    'Email sending disabled on mail server',
-                    $att
-                )
+                        if (is_string($vl)) {
+                            $rt = strtolower($vl) === 'true';
+                            $rt = $rt || (strtolower($vl) === 'yes');
+                            $rt = $rt || (strtolower($vl) === 'on');
+                        }
+
+                        return $rt;
+                    },
+                ],
             );
 
-            return false;
-        }
+            if (! $server_on) {
+                do_action(
+                    'wp_mail_failed',
+                    new WP_Error(
+                        'wp_mail_failed',
+                        'Email sending disabled on mail server',
+                        $att
+                    )
+                );
 
-        $sccount_on  = get_post_meta($this->_mail_server->ID, 'enabled', null)[0] ?? null;
-
-        if (! (is_string($sccount_on) ? (strtolower($sccount_on) === 'on') : $sccount_on === true)) {
+                return false;
+            }
+        } else {
             do_action(
                 'wp_mail_failed',
                 new WP_Error(
                     'wp_mail_failed',
-                    'Email sending disabled on email account',
+                    'Mail server not set',
                     $att
                 )
             );
@@ -257,7 +435,10 @@ class Email
             $phpmailer->Password   = $setup['password'];
             $phpmailer->SMTPSecure = $setup['encryption_type'];
 
-            $phpmailer->setFrom($setup['sender']['address'] ?? '', $setup['sender']['name'] ?? '');
+            $phpmailer->setFrom(
+                $setup['sender']['address'] ?? '',
+                $setup['sender']['name'] ?? ''
+            );
 
             if ($setup['content_type'] === 'text/html') {
                 $phpmailer->isHTML(true);
@@ -271,9 +452,26 @@ class Email
             $phpmailer->Subject = $setup['message']['subject'];
         });
 
-        $send = wp_mail($to, $setup['message']['subject'] ?? '', $setup['message']['body_plain'] ?? '');
+        $send = wp_mail(
+            $to,
+            $setup['message']['subject'] ?? '',
+            $setup['message']['body_plain'] ?? ''
+        );
+
+        if (isset($phpmailer)) {
+            unset($phpmailer);
+        }
 
         return $send;
+    }
+
+    /**
+     * TODO: implement
+     */
+    public static
+    function createFromLog(int $email_log): self
+    {
+        return new self();
     }
 }
 /*

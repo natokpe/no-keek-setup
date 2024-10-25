@@ -49,5 +49,6 @@ return [
     'query_vars' => [
         'action',
         'nnc', // nonce
+        'pg',
     ],
 ];

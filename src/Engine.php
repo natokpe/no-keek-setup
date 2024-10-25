@@ -467,82 +467,6 @@ class Engine
             return is_bool($show) ? $show : true;
         });
 
-        // add_filter('manage_member_posts_columns', function ($posts_columns) {
-        //     $new_cols = [
-        //         'cb' => $posts_columns['cb'],
-        //         'member_name' => 'Name',
-        //         'member_photo' => 'Photo',
-        //     ] + $posts_columns;
-
-        //     unset($new_cols['title']);
-
-        //     return $new_cols;
-        // });
-
-        // add_filter('manage_edit-member_sortable_columns', function ($columns) {
-        //     return (['member_name' => 'Name'] + $columns);
-        // });
-
-        // add_action('manage_member_posts_custom_column', function ($column_name, $post_id) {
-        //     switch ($column_name) {
-        //         case 'member_name':
-        //             edit_post_link(
-        //                 get_post_meta($post_id, 'ecjpmbnm_full', [])[0] ?? '',
-        //                 '<strong>',
-        //                 '</strong>',
-        //                 $post_id,
-        //                 ''
-        //             );
-        //             break;
-
-        //         case 'member_photo':
-        //             if (has_post_thumbnail($post_id)) {
-        //                 echo get_the_post_thumbnail($post_id, 'image-32');
-        //             } else {
-        //                 printf(
-        //                     '<img width="32" height="32" src="%s" '
-        //                     . 'alt="" decoding="async" loading="lazy" />',
-
-        //                     Engine::url('assets/img/member.webp')
-        //                 );
-        //             }
-        //             break;
-        //     }
-        // }, 10, 2);
-
-        // add_filter('list_table_primary_column', function ($default, $screen) {
-        //     $new_default = $default;
-
-        //     switch ($screen) {
-        //         case 'edit-member':
-        //             $new_default = 'member_name';
-        //             break;
-        //     }
-
-        //     return $new_default;
-        // }, 10, 2 );
-
-        // add_action('admin_menu', function () {
-        //     add_filter('post_row_actions', function ($actions, $post) {
-        //         $new_actions = [];
-
-        //         switch (get_post_type($post)) {
-        //             case 'member':
-        //                 $new_actions = $actions;
-        //                 unset($new_actions['view']);
-        //                 return $new_actions;
-        //                 break;
-
-        //                 default:
-        //                 return $actions;
-        //         }
-        //     }, 10, 2);
-        // });
-
-        add_action('admin_bar_menu', function ($wp_admin_bar) {
-            $wp_admin_bar->remove_node('wp-logo');
-        });
-
         add_filter('users_list_table_query_args', function ($args) {
             $new_args   = $args;
             $user_roles = wp_get_current_user()->roles;
@@ -662,110 +586,6 @@ class Engine
 
             return $ed_roles;
         });
-
-        // add_action('submit_application', function (array $details = []) {
-        //     $cnt = [
-        //         'jobs' => [],
-
-        //         'edu'  => [
-        //             'masters'  => 'Masters',
-        //             'bachelor' => 'Bachelor degree',
-        //             'ssce'     => 'Senior Secondary School certificate',
-        //             'jsce'     => 'Junior Secondary School certificate',
-        //             'primary'  => 'First School Leaving certificate',
-        //         ],
-
-        //         'know' => [
-        //             'word_of_mouth' => 'Word of mouth',
-        //             'google'        => 'Google',
-        //             'facebook'      => 'Facebook',
-        //             'instagram'     => 'Instagram',
-        //             'x'             => 'X',
-        //             'tiktok'        => 'Tiktok',
-        //             'other'         => 'Other',
-        //         ],
-        //     ];
-
-        //     foreach (((new WP_Query([
-        //         'post_type'           => 'job_position',
-        //         'post_status'         => 'publish',
-        //         'has_password'        => false,
-        //         'ignore_sticky_posts' => false,
-        //         'order'               => 'DESC',
-        //         'orderby'             => 'date',
-        //         'nopaging'            => true,
-        //         'paged'               => false,
-        //     ]))->posts) as $_) {
-        //         $cnt['jobs'][$_->ID] = $_->post_title;
-        //     }
-
-        //     $check = array_key_exists($details['job'], $cnt['jobs']);
-        //     $check = $check && (! empty($details['name']) && (strlen($details['name']) <= 100));
-        //     $check = $check && (! empty($details['email']) && (strlen($details['email']) <= 80));
-        //     $check = $check && ((strlen($details['phone']) === 11) && ctype_digit($details['phone']));
-        //     $check = $check && (array_key_exists($details['edu'], $cnt['edu']));
-        //     $check = $check && (! empty($details['skills']) && (strlen($details['skills']) <= 500));
-        //     $check = $check && (! empty($details['about']) && (strlen($details['about']) <= 500));
-        //     $check = $check && (is_string($details['cv']) && ! empty((string) $details['cv']));
-
-        //     if (isset($details['letter'])) {
-        //         $check = $check && (is_string($details['letter']) && ! empty((string) $details['letter']));
-        //     }
-
-        //     $check = $check && (array_key_exists($details['know'], $cnt['know']));
-
-        //     $check = $check && empty((new WP_Query([
-        //         'post_type'    => 'job_application',
-        //         'nopaging'     => true,
-        //         'meta_query' => [
-        //             [
-        //                 'key'     => 'email',
-        //                 'value'   => $details['email'],
-        //                 'compare' => '=',
-        //             ],
-        //         ],
-        //     ]))->posts);
-
-        //     if (! $check) {
-        //         return;
-        //     }
-
-        //     $ref = strtoupper(base_convert(((string) random_int(1, 9))
-        //     . ((string) Clock::now())
-        //     . ((string) random_int(0, 999))
-        //     . ((string) random_int(0, 999)), 10, 36));
-
-        //     wp_insert_post([
-        //         'post_title'     => $cnt['jobs'][$details['job']] . ' - ' . $ref,
-        //         'post_content'   => '',
-        //         'post_type'      => 'job_application',
-        //         'post_status'    => 'publish',
-        //         'comment_status' => 'closed',
-        //         'ping_status'    => 'closed',
-        //         'meta_input'     => [
-        //             'job'         => $details['job'],
-        //             'name'        => $details['name'],
-        //             'email'       => $details['email'],
-        //             'phone'       => $details['phone'],
-        //             'edu'         => $details['edu'],
-        //             'skills'      => $details['skills'],
-        //             'about'       => $details['about'],
-        //             'cv'          => $details['cv'],
-        //             'letter'      => $details['letter'] ?? '',
-        //             'know'        => $details['know'],
-        //             'ref'         => $ref,
-        //         ],
-        //     ], true, true);
-
-        // }, 10, 1);
-
-        // add_action('save_post_job_application', function ($post_id, $post, $update) {
-        //     // $student          = get_post_meta($post_id, 'sender', true);
-        //     // $course           = get_post_meta($post_id, 'item', true);
-        //     // $payment_status   = get_post_meta($post_id, 'status', true);
-        //     // var_dump('saved', $post_id, $post, $update);exit;
-        //     // wp_schedule_single_event(Clock::now() + );
-        // }, 10, 3);
 
         add_filter('cron_schedules', function ($schedules) {
             return array_merge($schedules, [
@@ -895,6 +715,147 @@ class Engine
 
             return $allow;
         }, 1, 2);
+
+        // add_action('update_application', function (int $user_id, array $details) {
+        //     $user = new WP_User($user_id);
+
+        //     if (! $user->exists()) {
+        //         return;
+        //     }
+
+        //     $details = [
+        //         'profile_firstname'         => '',
+        //         'profile_lastname'          => '',
+        //         'profile_othernames'        => '',
+        //         'profile_dob'               => '',
+        //         'profile_gender'            => '',
+        //         'profile_marital_status'    => '',
+        //         'profile_disability'        => '',
+        //         'contact_email'             => '',
+        //         'contact_phone'             => '',
+        //         'contact_whatsapp'          => '',
+        //         'contact_telegram'          => '',
+        //         'contact_linkedin'          => '',
+        //         'contact_facebook'          => '',
+        //         'contact_x'                 => '',
+        //         'contact_addr_line_1'       => '',
+        //         'contact_addr_line_2'       => '',
+        //         'contact_addr_country'      => '',
+        //         'contact_addr_state'        => '',
+        //         'contact_addr_city'         => '',
+        //         'contact_addr_postcode'     => '',
+        //         'contact_addr_landmark'     => '',
+        //         'education_qualification'   => '',
+        //         'employment_industry'       => '',
+        //         'employment_occupation'     => '',
+        //         'employment_status'         => '',
+        //         'skill_level'               => '',
+        //         'skill_meeting_tools'       => '',
+        //         'skill_software_tools'      => '',
+        //         'finance_inclusion'         => '',
+        //         'finance_inclusion_comment' => '',
+        //         'extra_courses'             => '',
+        //         'extra_pc_access'           => '',
+        //         'extra_availability'        => '',
+        //         'extra_referrer'            => '',
+        //         'extra_referrer_comment'    => '',
+        //         'extra_aim'                 => '',
+        //     ];
+
+        //     $cnt = [
+        //         'jobs' => [],
+
+        //         'edu'  => [
+        //             'masters'  => 'Masters',
+        //             'bachelor' => 'Bachelor degree',
+        //             'ssce'     => 'Senior Secondary School certificate',
+        //             'jsce'     => 'Junior Secondary School certificate',
+        //             'primary'  => 'First School Leaving certificate',
+        //         ],
+
+        //         'know' => [
+        //             'word_of_mouth' => 'Word of mouth',
+        //             'google'        => 'Google',
+        //             'facebook'      => 'Facebook',
+        //             'instagram'     => 'Instagram',
+        //             'x'             => 'X',
+        //             'tiktok'        => 'Tiktok',
+        //             'other'         => 'Other',
+        //         ],
+        //     ];
+
+        //     foreach (((new WP_Query([
+        //         'post_type'           => 'job_position',
+        //         'post_status'         => 'publish',
+        //         'has_password'        => false,
+        //         'ignore_sticky_posts' => false,
+        //         'order'               => 'DESC',
+        //         'orderby'             => 'date',
+        //         'nopaging'            => true,
+        //         'paged'               => false,
+        //     ]))->posts) as $_) {
+        //         $cnt['jobs'][$_->ID] = $_->post_title;
+        //     }
+
+        //     $check = array_key_exists($details['job'], $cnt['jobs']);
+        //     $check = $check && (! empty($details['name']) && (strlen($details['name']) <= 100));
+        //     $check = $check && (! empty($details['email']) && (strlen($details['email']) <= 80));
+        //     $check = $check && ((strlen($details['phone']) === 11) && ctype_digit($details['phone']));
+        //     $check = $check && (array_key_exists($details['edu'], $cnt['edu']));
+        //     $check = $check && (! empty($details['skills']) && (strlen($details['skills']) <= 500));
+        //     $check = $check && (! empty($details['about']) && (strlen($details['about']) <= 500));
+        //     $check = $check && (is_string($details['cv']) && ! empty((string) $details['cv']));
+
+        //     if (isset($details['letter'])) {
+        //         $check = $check && (is_string($details['letter']) && ! empty((string) $details['letter']));
+        //     }
+
+        //     $check = $check && (array_key_exists($details['know'], $cnt['know']));
+
+        //     $check = $check && empty((new WP_Query([
+        //         'post_type'    => 'job_application',
+        //         'nopaging'     => true,
+        //         'meta_query' => [
+        //             [
+        //                 'key'     => 'email',
+        //                 'value'   => $details['email'],
+        //                 'compare' => '=',
+        //             ],
+        //         ],
+        //     ]))->posts);
+
+        //     if (! $check) {
+        //         return;
+        //     }
+
+        //     $ref = strtoupper(base_convert(((string) random_int(1, 9))
+        //     . ((string) Clock::now())
+        //     . ((string) random_int(0, 999))
+        //     . ((string) random_int(0, 999)), 10, 36));
+
+        //     wp_insert_post([
+        //         'post_title'     => $cnt['jobs'][$details['job']] . ' - ' . $ref,
+        //         'post_content'   => '',
+        //         'post_type'      => 'job_application',
+        //         'post_status'    => 'publish',
+        //         'comment_status' => 'closed',
+        //         'ping_status'    => 'closed',
+        //         'meta_input'     => [
+        //             'job'         => $details['job'],
+        //             'name'        => $details['name'],
+        //             'email'       => $details['email'],
+        //             'phone'       => $details['phone'],
+        //             'edu'         => $details['edu'],
+        //             'skills'      => $details['skills'],
+        //             'about'       => $details['about'],
+        //             'cv'          => $details['cv'],
+        //             'letter'      => $details['letter'] ?? '',
+        //             'know'        => $details['know'],
+        //             'ref'         => $ref,
+        //         ],
+        //     ], true, true);
+
+        // }, 10, 1);
     }
 }
 /*

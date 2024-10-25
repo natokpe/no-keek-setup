@@ -10,33 +10,36 @@ class DataList
     public static
     function get(string $list, bool $as_object = false): array|object
     {
-        $result = [];
+        $lists = [
+            'email_connection' => [
+                'smtp' => 'SMTP',
+            ],
 
-        switch ($list) {
-            case 'email_connection':
-                $result = [
-                    'smtp' => 'SMTP',
-                ];
-                break;
+            'smtp_encryption' => [
+                'tls' => 'STARTTLS',
+                'ssl' => 'SMTPS',
+            ],
 
-            case 'smtp_encryption':
-                $result = [
-                    'tls' => 'STARTTLS',
-                    'ssl' => 'SMTPS',
-                ];
-                break;
+            'content_type' => [
+                'text/plain' => 'Plain Text',
+                'text/html'  => 'HTML',
+            ],
 
-            case 'content_type':
-                $result = [
-                    'text/plain' => 'Plain Text',
-                    'text/html'  => 'HTML',
-                ];
-                break;
+            'gender' => [
+                'male'       => 'Male',
+                'female'     => 'Female',
+                'non-binary' => 'Non-Binary',
+            ],
 
-            default:
-                break;
-        }
+            'marital_status' => [
+                'single'   => 'Single',
+                'married'  => 'Married',
+                'divorced' => 'Divorced',
+            ],
+        ];
 
-        return $result;
+        return $as_object
+        ? ((object) ($lists[$list] ?? []))
+        : $lists[$list] ?? [];
     }
 }
